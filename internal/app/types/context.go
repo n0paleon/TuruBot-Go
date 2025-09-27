@@ -14,6 +14,7 @@ type BotContext struct {
 	Client  *whatsmeow.Client
 	Event   *events.Message
 	Pool    WorkerPool
+	Queue   *MessageQueue
 }
 
 func (ctx *BotContext) GetMessageString() string {
@@ -35,7 +36,7 @@ func (ctx *BotContext) GetMessageString() string {
 }
 
 func (ctx *BotContext) Reply(msg string) error {
-	_, err := ctx.Client.SendMessage(ctx.Context, ctx.Event.Info.Chat, &waE2E.Message{
+	message := &waE2E.Message{
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
 			Text: proto.String(msg),
 			ContextInfo: &waE2E.ContextInfo{
@@ -44,9 +45,9 @@ func (ctx *BotContext) Reply(msg string) error {
 				QuotedMessage: ctx.Event.Message,
 			},
 		},
-	})
+	}
 
-	return err
+	return ctx.Queue.EnqueueMessage(ctx, message)
 }
 
 func (ctx *BotContext) GetEventMessageJson() (string, error) {
@@ -106,6 +107,5 @@ func (ctx *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
 		},
 	}
 
-	_, err = ctx.Client.SendMessage(ctx.Context, ctx.Event.Info.Chat, message)
-	return err
+	return ctx.Queue.EnqueueMessage(ctx, message)
 }

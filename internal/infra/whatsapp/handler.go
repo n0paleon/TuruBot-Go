@@ -12,7 +12,7 @@ func (wa *WAClient) EventHandler(evt interface{}) {
 	case *events.Message:
 		msg := v
 		_ = wa.WorkerPool.Submit(func() {
-			app.HandleMessage(wa.Client, msg, wa.Router, wa.WorkerPool)
+			app.HandleMessage(wa.Client, msg, wa.Router, wa.WorkerPool, wa.Queue)
 		})
 	case *events.Connected:
 		logrus.Println("Client connected successfully")

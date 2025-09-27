@@ -16,6 +16,7 @@ type WAClient struct {
 	Client     *whatsmeow.Client
 	WorkerPool types.WorkerPool
 	Router     *router.Router
+	Queue      *types.MessageQueue
 }
 
 func NewClient(workerpool types.WorkerPool, r *router.Router) (*WAClient, error) {
@@ -44,7 +45,20 @@ func NewClient(workerpool types.WorkerPool, r *router.Router) (*WAClient, error)
 	return wa, nil
 }
 
+func (wa *WAClient) SetQueue(maxMessagePerSecond int) {
+	if wa.Queue != nil {
+		return
+	}
+
+	mq := types.NewMessageQueue(wa.Client, maxMessagePerSecond)
+	wa.Queue = mq
+}
+
 func (wa *WAClient) Connect() error {
+	if wa.Queue == nil {
+		wa.SetQueue(40)
+	}
+
 	if wa.Client.Store.ID == nil {
 		qrChan, _ := wa.Client.GetQRChannel(context.Background())
 		_ = wa.WorkerPool.Submit(func() {

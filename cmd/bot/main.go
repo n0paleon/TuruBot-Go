@@ -28,7 +28,6 @@ func botRoutes() *router.Router {
 
 	r.Handle(commands.PingHandler).
 		Cmd("ping").
-		Aliases("p").
 		Description("Bot availability status check")
 	r.Handle(commands.StatusHandler).
 		Cmd("status").

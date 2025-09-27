@@ -16,7 +16,7 @@ var (
 	allowedPrefix = []string{"!", "/", ".", "#", "?"}
 )
 
-func HandleMessage(client *whatsmeow.Client, evt *events.Message, r *router.Router, pool types.WorkerPool) {
+func HandleMessage(client *whatsmeow.Client, evt *events.Message, r *router.Router, pool types.WorkerPool, mq *types.MessageQueue) {
 	if evt.IsEdit || evt.Info.IsFromMe {
 		return
 	}
@@ -32,6 +32,7 @@ func HandleMessage(client *whatsmeow.Client, evt *events.Message, r *router.Rout
 		Context: ctx,
 		Client:  client,
 		Event:   evt,
+		Queue:   mq,
 	}
 
 	msgString := botCtx.GetMessageString()

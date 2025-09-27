@@ -7,6 +7,11 @@ import (
 )
 
 func PingHandler(ctx *types.BotContext) error {
-	latency := time.Since(ctx.Event.Info.Timestamp).Milliseconds()
-	return ctx.Reply(fmt.Sprintf("Pong!\n\n_%dms_", latency))
+	start := time.Now()
+	err := ctx.Reply("Pong!")
+	if err != nil {
+		return err
+	}
+	latency := time.Since(start).Milliseconds()
+	return ctx.Reply(fmt.Sprintf("⏱ Bot latency: %dms", latency))
 }
