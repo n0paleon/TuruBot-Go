@@ -9,6 +9,7 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	"golang.org/x/time/rate"
 	"os"
 )
 
@@ -16,10 +17,12 @@ type WAClient struct {
 	Client     *whatsmeow.Client
 	WorkerPool types.WorkerPool
 	Router     *router.Router
-	Queue      *types.MessageQueue
+
+	sendQueue chan sendTask
+	limiter   *rate.Limiter
 }
 
-func NewClient(workerpool types.WorkerPool, r *router.Router) (*WAClient, error) {
+func NewClient(workerpool types.WorkerPool, r *router.Router, maxPerSecond int) (*WAClient, error) {
 	ctx := context.Background()
 	dbLog := waLog.Stdout("Database", "INFO", true)
 	container, err := sqlstore.New(ctx, "sqlite3", "file:session_store.db?_foreign_keys=on", dbLog)
@@ -39,25 +42,19 @@ func NewClient(workerpool types.WorkerPool, r *router.Router) (*WAClient, error)
 		Client:     client,
 		WorkerPool: workerpool,
 		Router:     r,
+		sendQueue:  make(chan sendTask, 1000),
+		limiter:    rate.NewLimiter(rate.Limit(maxPerSecond), 5), // burst = maxPerSecond
 	}
 	client.AddEventHandler(wa.EventHandler)
+
+	_ = wa.WorkerPool.Submit(func() {
+		wa.worker()
+	})
 
 	return wa, nil
 }
 
-func (wa *WAClient) SetQueue(maxMessagePerSecond int) {
-	if wa.Queue != nil {
-		return
-	}
-
-	mq := types.NewMessageQueue(wa.Client, maxMessagePerSecond)
-	wa.Queue = mq
-}
-
 func (wa *WAClient) Connect() error {
-	if wa.Queue == nil {
-		wa.SetQueue(40)
-	}
 
 	if wa.Client.Store.ID == nil {
 		qrChan, _ := wa.Client.GetQRChannel(context.Background())

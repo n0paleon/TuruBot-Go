@@ -5,20 +5,43 @@ import (
 	"github.com/bytedance/sonic"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 )
 
 type BotContext struct {
-	Context context.Context
-	Client  *whatsmeow.Client
-	Event   *events.Message
-	Pool    WorkerPool
-	Queue   *MessageQueue
+	Context   context.Context
+	WAC       Messenger
+	Event     *events.Message
+	Pool      WorkerPool
+	queueMode QueueMode
 }
 
-func (ctx *BotContext) GetMessageString() string {
-	msg := ctx.Event.Message
+type QueueMode int
+
+const (
+	QueueNonBlocking QueueMode = iota // default
+	QueueBlocking
+)
+
+// sendMessage this is internal function that control how message is sent (blocking or non-blocking)
+func (c *BotContext) sendMessage(ctx context.Context, chatJID types.JID, msg *waE2E.Message) error {
+	switch {
+	case c.queueMode == QueueBlocking:
+		return c.WAC.EnqueueMessage(ctx, chatJID, msg)
+	default:
+		return c.WAC.EnqueueMessageNonBlocking(ctx, chatJID, msg)
+	}
+}
+
+func (c *BotContext) SetQueueMode(mode QueueMode) {
+	c.queueMode = mode
+}
+
+func (c *BotContext) GetMessageString() string {
+	msg := c.unwrapMessage(c.Event.Message)
+
 	switch {
 	case msg.GetConversation() != "":
 		return msg.GetConversation()
@@ -35,31 +58,55 @@ func (ctx *BotContext) GetMessageString() string {
 	}
 }
 
-func (ctx *BotContext) Reply(msg string) error {
+func (c *BotContext) GetMessageSender() types.JID {
+	return c.Event.Info.Chat
+}
+
+func (c *BotContext) Reply(msg string) error {
 	message := &waE2E.Message{
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
 			Text: proto.String(msg),
 			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(ctx.Event.Info.ID),
-				Participant:   proto.String(ctx.Event.Info.Sender.ToNonAD().String()),
-				QuotedMessage: ctx.Event.Message,
+				StanzaID:      proto.String(c.Event.Info.ID),
+				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),
+				QuotedMessage: c.Event.Message,
 			},
 		},
 	}
 
-	return ctx.Queue.EnqueueMessage(ctx, message)
+	return c.sendMessage(c.Context, c.GetMessageSender(), message)
 }
 
-func (ctx *BotContext) GetEventMessageJson() (string, error) {
-	bytes, err := sonic.MarshalIndent(ctx.Event, "", "	")
+func (c *BotContext) GetEventMessageJson() (string, error) {
+	bytes, err := sonic.MarshalIndent(c.Event, "", "	")
 	if err != nil {
 		return "", err
 	}
 	return string(bytes), nil
 }
 
-func (ctx *BotContext) GetImageMessage() *waE2E.ImageMessage {
-	msg := ctx.Event.Message
+func (c *BotContext) unwrapMessage(msg *waE2E.Message) *waE2E.Message {
+	if msg == nil {
+		return nil
+	}
+
+	if msg.GetDeviceSentMessage() != nil {
+		return c.unwrapMessage(msg.GetDeviceSentMessage().Message)
+	}
+
+	if msg.GetEphemeralMessage() != nil {
+		return c.unwrapMessage(msg.GetEphemeralMessage().Message)
+	}
+
+	if msg.GetViewOnceMessage() != nil {
+		return c.unwrapMessage(msg.GetViewOnceMessage().Message)
+	}
+
+	return msg
+}
+
+func (c *BotContext) GetImageMessage() *waE2E.ImageMessage {
+	msg := c.unwrapMessage(c.Event.Message)
 
 	switch {
 	case msg.GetImageMessage() != nil:
@@ -82,8 +129,16 @@ func (ctx *BotContext) GetImageMessage() *waE2E.ImageMessage {
 	}
 }
 
-func (ctx *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
-	upload, err := ctx.Client.Upload(ctx.Context, sticker.Image, whatsmeow.MediaImage)
+func (c *BotContext) Download(ctx context.Context, msg whatsmeow.DownloadableMessage) ([]byte, error) {
+	return c.WAC.Download(ctx, msg)
+}
+
+func (c *BotContext) Upload(ctx context.Context, plaintext []byte, appInfo whatsmeow.MediaType) (whatsmeow.UploadResponse, error) {
+	return c.WAC.Upload(ctx, plaintext, appInfo)
+}
+
+func (c *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
+	upload, err := c.Upload(c.Context, sticker.Image, whatsmeow.MediaImage)
 	if err != nil {
 		return err
 	}
@@ -100,12 +155,12 @@ func (ctx *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
 			PngThumbnail:  sticker.PNGThumbnail,
 			IsAnimated:    proto.Bool(false),
 			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(ctx.Event.Info.ID),
-				Participant:   proto.String(ctx.Event.Info.Sender.ToNonAD().String()),
-				QuotedMessage: ctx.Event.Message,
+				StanzaID:      proto.String(c.Event.Info.ID),
+				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),
+				QuotedMessage: c.Event.Message,
 			},
 		},
 	}
 
-	return ctx.Queue.EnqueueMessage(ctx, message)
+	return c.sendMessage(c.Context, c.GetMessageSender(), message)
 }

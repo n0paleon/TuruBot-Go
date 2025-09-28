@@ -6,14 +6,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func GenerateStickerByImage(ctx *types.BotContext) error {
+func (cmd *Command) GenerateStickerByImage(ctx *types.BotContext) error {
 	imageData := ctx.GetImageMessage()
 
 	if imageData == nil {
 		return ctx.Reply("mana gambarnya, anjing")
 	}
 
-	imageBytes, err := ctx.Client.Download(ctx.Context, imageData)
+	imageBytes, err := ctx.Download(ctx.Context, imageData)
 	if err != nil {
 		logrus.Errorf("failed to download image: %v", err)
 		return ctx.Reply("error nih anjing")

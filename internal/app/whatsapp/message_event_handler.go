@@ -1,38 +1,31 @@
-package app
+package whatsapp
 
 import (
-	"TuruBot-Go/internal/app/router"
 	"TuruBot-Go/internal/app/types"
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types/events"
 	"strings"
 	"time"
 )
 
-var (
-	allowedPrefix = []string{"!", "/", ".", "#", "?"}
-)
-
-func HandleMessage(client *whatsmeow.Client, evt *events.Message, r *router.Router, pool types.WorkerPool, mq *types.MessageQueue) {
-	if evt.IsEdit || evt.Info.IsFromMe {
+func (wa *WAClient) MessageEventHandler(msg *events.Message) {
+	if msg.IsEdit || msg.Info.IsFromMe {
 		return
 	}
 
-	if time.Now().Sub(evt.Info.Timestamp) > 10*time.Second {
+	if time.Now().Sub(msg.Info.Timestamp) > 10*time.Second {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	botCtx := &types.BotContext{
-		Pool:    pool,
+		Pool:    wa.WorkerPool,
 		Context: ctx,
-		Client:  client,
-		Event:   evt,
-		Queue:   mq,
+		WAC:     wa,
+		Event:   msg,
 	}
 
 	msgString := botCtx.GetMessageString()
@@ -50,8 +43,11 @@ func HandleMessage(client *whatsmeow.Client, evt *events.Message, r *router.Rout
 	cmdName := strings.ToLower(firstWord[1:])
 	start := time.Now()
 
-	err := r.Exec(cmdName, botCtx)
+	err := wa.Router.Exec(cmdName, botCtx)
 	if err != nil {
+		if err.Error() == "COMMAND_NOT_FOUND" {
+			return
+		}
 		logrus.Errorf("failed to execute command: %v", err)
 	}
 
@@ -61,13 +57,4 @@ func HandleMessage(client *whatsmeow.Client, evt *events.Message, r *router.Rout
 		"duration":  fmt.Sprintf("%dms", duration.Milliseconds()),
 		"error":     err != nil,
 	}).Info("Execution Result")
-}
-
-func HasAllowedPrefix(msg string, prefixes []string) (string, bool) {
-	for _, p := range prefixes {
-		if strings.HasPrefix(msg, p) {
-			return p, true
-		}
-	}
-	return "", false
 }

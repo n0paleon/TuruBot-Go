@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"TuruBot-Go/internal/app/types"
 	"fmt"
 	"strings"
 	"time"
@@ -11,11 +12,9 @@ import (
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
-
-	"TuruBot-Go/internal/app/types"
 )
 
-func StatusHandler(ctx *types.BotContext) error {
+func (cmd *Command) StatusHandler(ctx *types.BotContext) error {
 	uptime, err := host.Uptime()
 	if err != nil {
 		return ctx.Reply(fmt.Sprintf("Failed to get uptime: %v", err))

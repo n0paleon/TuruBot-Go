@@ -6,12 +6,14 @@ import (
 	"time"
 )
 
-func PingHandler(ctx *types.BotContext) error {
+func (cmd *Command) PingHandler(ctx *types.BotContext) error {
 	start := time.Now()
+	ctx.SetQueueMode(types.QueueBlocking)
 	err := ctx.Reply("Pong!")
 	if err != nil {
 		return err
 	}
+	ctx.SetQueueMode(types.QueueNonBlocking)
 	latency := time.Since(start).Milliseconds()
 	return ctx.Reply(fmt.Sprintf("⏱ Bot latency: %dms", latency))
 }

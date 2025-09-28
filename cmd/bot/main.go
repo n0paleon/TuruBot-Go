@@ -4,7 +4,7 @@ import (
 	"TuruBot-Go/internal/app/commands"
 	"TuruBot-Go/internal/app/router"
 	"TuruBot-Go/internal/app/router/middleware"
-	"TuruBot-Go/internal/infra/whatsapp"
+	"TuruBot-Go/internal/app/whatsapp"
 	"github.com/panjf2000/ants/v2"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -21,22 +21,26 @@ func init() {
 
 func botRoutes() *router.Router {
 	r := router.New()
+	cmd := commands.Init(r)
 
 	// route middleware
 	r.Use(middleware.MessageMiddleware())
 	r.Use(middleware.AllowedPrefixMiddleware())
 
-	r.Handle(commands.PingHandler).
-		Cmd("ping").
-		Description("Bot availability status check")
-	r.Handle(commands.StatusHandler).
-		Cmd("status").
-		Aliases("stat", "stats").
-		Description("Bot system status check")
-	r.Handle(commands.GenerateStickerByImage).
-		Cmd("sticker").
-		Aliases("st", "stiker").
-		Description("Generate sticker with image")
+	r.Handle(cmd.PingHandler).
+		SetCmd("ping").
+		SetDescription("Bot availability status check")
+	r.Handle(cmd.StatusHandler).
+		SetCmd("status").
+		SetAliases("stat", "stats").
+		SetDescription("Bot system status check")
+	r.Handle(cmd.GenerateStickerByImage).
+		SetCmd("sticker").
+		SetAliases("st", "stiker").
+		SetDescription("Generate sticker with image")
+	r.Handle(cmd.ShowMenu).
+		SetCmd("menu").
+		SetDescription("Show bot menu")
 
 	// print all routes
 	r.PrintRoutes()
@@ -54,7 +58,7 @@ func main() {
 	}
 
 	routeSet := botRoutes()
-	wa, err := whatsapp.NewClient(pool, routeSet)
+	wa, err := whatsapp.NewClient(pool, routeSet, 20)
 	if err != nil {
 		logrus.Fatal(err)
 	}
