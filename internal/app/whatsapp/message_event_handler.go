@@ -25,6 +25,7 @@ func (wa *WAClient) MessageEventHandler(msg *events.Message) {
 		Pool:    wa.WorkerPool,
 		Context: ctx,
 		WAC:     wa,
+		RawWAC:  wa.Client,
 		Event:   msg,
 	}
 

@@ -13,6 +13,7 @@ import (
 type BotContext struct {
 	Context   context.Context
 	WAC       Messenger
+	RawWAC    *whatsmeow.Client
 	Event     *events.Message
 	Pool      WorkerPool
 	queueMode QueueMode
