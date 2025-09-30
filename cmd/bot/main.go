@@ -5,6 +5,7 @@ import (
 	"TuruBot-Go/internal/app/router"
 	"TuruBot-Go/internal/app/router/middleware"
 	"TuruBot-Go/internal/app/whatsapp"
+	"TuruBot-Go/internal/config"
 	"github.com/panjf2000/ants/v2"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -57,8 +58,13 @@ func main() {
 		logrus.Fatalf("failed to initialize ants.Pool: %v", err)
 	}
 
+	cfg, err := config.LoadConfig(".env")
+	if err != nil {
+		logrus.Fatalf("failed to load config: %v", err)
+	}
+
 	routeSet := botRoutes()
-	wa, err := whatsapp.NewClient(pool, routeSet, 20)
+	wa, err := whatsapp.NewClient(pool, routeSet, 20, cfg)
 	if err != nil {
 		logrus.Fatal(err)
 	}

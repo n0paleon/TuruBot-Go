@@ -17,6 +17,10 @@ func AllowedPrefixMiddleware() types.Middleware {
 				return nil
 			}
 
+			if ctx.Event.Info.PushName == "status@broadcast" {
+				return nil
+			}
+
 			for _, p := range allowedPrefix {
 				if strings.HasPrefix(msgString, p) {
 					return next(ctx)

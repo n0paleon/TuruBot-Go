@@ -3,8 +3,10 @@ package whatsapp
 import (
 	"TuruBot-Go/internal/app/router"
 	"TuruBot-Go/internal/app/types"
+	"TuruBot-Go/internal/config"
 	"context"
 	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -22,10 +24,14 @@ type WAClient struct {
 	limiter   *rate.Limiter
 }
 
-func NewClient(workerpool types.WorkerPool, r *router.Router, maxPerSecond int) (*WAClient, error) {
+type DBDialect string
+
+func NewClient(workerpool types.WorkerPool, r *router.Router, maxPerSecond int, cfg *config.Config) (*WAClient, error) {
 	ctx := context.Background()
+
 	dbLog := waLog.Stdout("Database", "INFO", true)
-	container, err := sqlstore.New(ctx, "sqlite3", "file:session_store.db?_foreign_keys=on", dbLog)
+
+	container, err := sqlstore.New(ctx, cfg.DBDialect, cfg.DBDsn, dbLog)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +44,11 @@ func NewClient(workerpool types.WorkerPool, r *router.Router, maxPerSecond int) 
 	clientLog := waLog.Stdout("Client", "INFO", true)
 	client := whatsmeow.NewClient(deviceStore, clientLog)
 
+	client.AutoTrustIdentity = true
+	client.SynchronousAck = true
+	client.EnableDecryptedEventBuffer = true
+	client.AutomaticMessageRerequestFromPhone = true
+
 	wa := &WAClient{
 		Client:     client,
 		WorkerPool: workerpool,
@@ -46,7 +57,6 @@ func NewClient(workerpool types.WorkerPool, r *router.Router, maxPerSecond int) 
 		limiter:    rate.NewLimiter(rate.Limit(maxPerSecond), 5), // burst = maxPerSecond
 	}
 	client.AddEventHandler(wa.EventHandler)
-
 	_ = wa.WorkerPool.Submit(func() {
 		wa.worker()
 	})
@@ -55,7 +65,6 @@ func NewClient(workerpool types.WorkerPool, r *router.Router, maxPerSecond int) 
 }
 
 func (wa *WAClient) Connect() error {
-
 	if wa.Client.Store.ID == nil {
 		qrChan, _ := wa.Client.GetQRChannel(context.Background())
 		_ = wa.WorkerPool.Submit(func() {
