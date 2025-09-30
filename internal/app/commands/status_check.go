@@ -3,6 +3,9 @@ package commands
 import (
 	"TuruBot-Go/internal/app/types"
 	"fmt"
+	"github.com/shirou/gopsutil/v4/mem"
+	"github.com/shirou/gopsutil/v4/process"
+	"os"
 	"strings"
 	"time"
 
@@ -10,7 +13,6 @@ import (
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/load"
-	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
 )
 
@@ -23,7 +25,7 @@ func (cmd *Command) StatusHandler(ctx *types.BotContext) error {
 	uptimeString := formatDurationHuman(uptimeDur)
 
 	avg, _ := load.Avg() // ignore error dan tampilkan kosong jika error
-	vmStat, _ := mem.VirtualMemory()
+	memStat, _ := getAppMemoryUsageMB()
 	cpuPercent, _ := cpu.Percent(0, false)
 	cputimes, _ := cpu.Times(false)
 	diskUsage, _ := disk.Usage("/")
@@ -39,8 +41,8 @@ func (cmd *Command) StatusHandler(ctx *types.BotContext) error {
 		sb.WriteString("Load Average: N/A\n")
 	}
 
-	if vmStat != nil {
-		sb.WriteString(fmt.Sprintf("Memory Usage: %.2f%% (%v / %v)\n", vmStat.UsedPercent, formatBytes(vmStat.Used), formatBytes(vmStat.Total)))
+	if memStat != "" {
+		sb.WriteString(fmt.Sprintf("Memory Usage: %s\n", memStat))
 	} else {
 		sb.WriteString("Memory Usage: N/A\n")
 	}
@@ -68,6 +70,38 @@ func (cmd *Command) StatusHandler(ctx *types.BotContext) error {
 	}
 
 	return ctx.Reply(sb.String())
+}
+
+func getAppMemoryUsageMB() (string, error) {
+	pid := int32(os.Getpid())
+	p, err := process.NewProcess(pid)
+	if err != nil {
+		return "", err
+	}
+	vmStat, err := mem.VirtualMemory()
+	if err != nil {
+		return "", err
+	}
+
+	memInfo, err := p.MemoryInfo()
+	if err != nil {
+		return "", err
+	}
+
+	memPercent, err := p.MemoryPercent()
+	if err != nil {
+		return "", err
+	}
+
+	vmStatTotal := formatBytes(vmStat.Total)
+	rss := formatBytes(memInfo.RSS)
+
+	return fmt.Sprintf(
+		"%.2f%% (%v/%v)",
+		memPercent,
+		rss,
+		vmStatTotal,
+	), nil
 }
 
 func formatBytes(b uint64) string {
