@@ -1,7 +1,9 @@
 package types
 
 import (
+	"TuruBot-Go/internal/app/utils"
 	"context"
+	"fmt"
 	"github.com/bytedance/sonic"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -155,6 +157,39 @@ func (c *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
 			FileLength:    &upload.FileLength,
 			PngThumbnail:  sticker.PNGThumbnail,
 			IsAnimated:    proto.Bool(false),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(c.Event.Info.ID),
+				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),
+				QuotedMessage: c.Event.Message,
+			},
+		},
+	}
+
+	return c.sendMessage(c.Context, c.GetMessageSender(), message)
+}
+
+func (c *BotContext) ReplyWithImage(image []byte, mimetype, caption string) error {
+	thumbnail, err := utils.GenerateThumbnail(image, 120, false)
+	if err != nil {
+		return fmt.Errorf("failed to generate thumbnail: %v", err)
+	}
+
+	upload, err := c.Upload(c.Context, image, whatsmeow.MediaImage)
+	if err != nil {
+		return fmt.Errorf("failed to upload image: %v", err)
+	}
+
+	message := &waE2E.Message{
+		ImageMessage: &waE2E.ImageMessage{
+			URL:           &upload.URL,
+			Mimetype:      proto.String(mimetype),
+			Caption:       proto.String(caption),
+			FileSHA256:    upload.FileSHA256,
+			FileEncSHA256: upload.FileEncSHA256,
+			FileLength:    &upload.FileLength,
+			MediaKey:      upload.MediaKey,
+			DirectPath:    &upload.DirectPath,
+			JPEGThumbnail: thumbnail,
 			ContextInfo: &waE2E.ContextInfo{
 				StanzaID:      proto.String(c.Event.Info.ID),
 				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),

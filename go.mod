@@ -17,22 +17,25 @@ require (
 	github.com/u2takey/ffmpeg-go v0.5.0
 	go.mau.fi/whatsmeow v0.0.0-20250922112717-258fd9454b95
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	golang.org/x/time v0.6.0
 	google.golang.org/protobuf v1.36.9
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/alecthomas/kong v1.12.1 // indirect
 	github.com/aws/aws-sdk-go v1.38.20 // indirect
 	github.com/beeper/argo-go v1.1.2 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/go-resty/resty/v2 v2.16.5 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect

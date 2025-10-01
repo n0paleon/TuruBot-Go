@@ -14,12 +14,13 @@ type Route struct {
 	handler     types.CommandHandler
 	Cmd         string
 	Description string
+	Help        string
 	Aliases     []string
 	middlewares []types.Middleware
 	router      *Router
 }
 
-// Cmd set command name and update registry
+// SetCmd set command name and update registry
 func (r *Route) SetCmd(cmd string) *Route {
 	prevCmd := r.Cmd
 	r.Cmd = strings.ToLower(cmd)
@@ -41,13 +42,19 @@ func (r *Route) SetCmd(cmd string) *Route {
 	return r
 }
 
-// Description set command description
+// SetDescription set command description
 func (r *Route) SetDescription(desc string) *Route {
 	r.Description = desc
 	return r
 }
 
-// Aliases set command aliases
+// SetHelp set command help usage
+func (r *Route) SetHelp(help string) *Route {
+	r.Help = help
+	return r
+}
+
+// SetAliases set command aliases
 func (r *Route) SetAliases(a ...string) *Route {
 	r.Aliases = append(r.Aliases, a...)
 	for _, alias := range a {

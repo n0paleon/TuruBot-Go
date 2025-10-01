@@ -17,7 +17,7 @@ func AllowedPrefixMiddleware() types.Middleware {
 				return nil
 			}
 
-			if ctx.Event.Info.PushName == "status@broadcast" {
+			if ctx.Event.Info.Chat.String() == "status@broadcast" {
 				return nil
 			}
 

@@ -19,7 +19,7 @@ func (wa *WAClient) MessageEventHandler(msg *events.Message) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	botCtx := &types.BotContext{
 		Pool:    wa.WorkerPool,

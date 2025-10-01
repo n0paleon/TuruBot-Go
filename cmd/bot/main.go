@@ -1,6 +1,8 @@
 package main
 
 import (
+	"TuruBot-Go/internal/adapter/memecraft"
+	"TuruBot-Go/internal/adapter/storage"
 	"TuruBot-Go/internal/app/commands"
 	"TuruBot-Go/internal/app/router"
 	"TuruBot-Go/internal/app/router/middleware"
@@ -22,7 +24,13 @@ func init() {
 
 func botRoutes() *router.Router {
 	r := router.New()
-	cmd := commands.Init(r)
+
+	// external adapter
+	storageAdapter := storage.NewCatboxMoeStorage()
+	memeCraftAdapter := memecraft.NewMemeCraft()
+
+	// command initiator
+	cmd := commands.Init(r, storageAdapter, memeCraftAdapter)
 
 	// route middleware
 	r.Use(middleware.MessageMiddleware())
@@ -37,11 +45,23 @@ func botRoutes() *router.Router {
 		SetDescription("Bot system status check")
 	r.Handle(cmd.GenerateStickerByImage).
 		SetCmd("sticker").
-		SetAliases("st", "stiker").
+		SetAliases("st", "stiker", "s").
 		SetDescription("Generate sticker with image")
 	r.Handle(cmd.ShowMenu).
 		SetCmd("menu").
 		SetDescription("Show bot menu")
+	r.Handle(cmd.GenerateTimpaDetik).
+		SetCmd("timpadetik").
+		SetHelp("/timpadetik --main-content=Prabowo Akan Berikan MBG Untuk Anak Rajin").
+		SetDescription("Generate Timpa Detik by memecraft.cettalabs.com")
+	r.Handle(cmd.GenerateTimpaCnn).
+		SetCmd("timpacnn").
+		SetHelp("/timpacnn --headline=Jokowi Putuskan Akan Kembali ke Solo").
+		SetDescription("Generate Timpa CNN by memecraft.cettalabs.com")
+	r.Handle(cmd.GenerateTimpaFolkative).
+		SetCmd("timpafolkative").
+		SetHelp("/timpafolkative --headline=Doraemon Ternyata Asli Solo, Kata Pakar --media-name=TukangTimpa").
+		SetDescription("Generate Timpa Folkative by memecraft.cettalabs.com")
 
 	// print all routes
 	r.PrintRoutes()

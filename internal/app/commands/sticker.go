@@ -10,7 +10,7 @@ func (cmd *Command) GenerateStickerByImage(ctx *types.BotContext) error {
 	imageData := ctx.GetImageMessage()
 
 	if imageData == nil {
-		return ctx.Reply("mana gambarnya, anjing")
+		return ctx.Reply("kirim/reply gambar dengan caption: /stiker")
 	}
 
 	imageBytes, err := ctx.Download(ctx.Context, imageData)
