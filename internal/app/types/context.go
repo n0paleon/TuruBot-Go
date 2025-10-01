@@ -70,6 +70,7 @@ func (c *BotContext) Reply(msg string) error {
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
 			Text: proto.String(msg),
 			ContextInfo: &waE2E.ContextInfo{
+				Expiration:    proto.Uint32(c.GetExpiration()),
 				StanzaID:      proto.String(c.Event.Info.ID),
 				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),
 				QuotedMessage: c.Event.Message,
@@ -140,6 +141,14 @@ func (c *BotContext) Upload(ctx context.Context, plaintext []byte, appInfo whats
 	return c.WAC.Upload(ctx, plaintext, appInfo)
 }
 
+func (c *BotContext) GetExpiration() uint32 {
+	if c.Event.Info.IsGroup {
+		return 30 * 86400
+	} else {
+		return 30 * 86400
+	}
+}
+
 func (c *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
 	upload, err := c.Upload(c.Context, sticker.Image, whatsmeow.MediaImage)
 	if err != nil {
@@ -158,6 +167,7 @@ func (c *BotContext) ReplyWithSticker(sticker *ImageSticker) error {
 			PngThumbnail:  sticker.PNGThumbnail,
 			IsAnimated:    proto.Bool(false),
 			ContextInfo: &waE2E.ContextInfo{
+				Expiration:    proto.Uint32(c.GetExpiration()),
 				StanzaID:      proto.String(c.Event.Info.ID),
 				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),
 				QuotedMessage: c.Event.Message,
@@ -191,6 +201,7 @@ func (c *BotContext) ReplyWithImage(image []byte, mimetype, caption string) erro
 			DirectPath:    &upload.DirectPath,
 			JPEGThumbnail: thumbnail,
 			ContextInfo: &waE2E.ContextInfo{
+				Expiration:    proto.Uint32(c.GetExpiration()),
 				StanzaID:      proto.String(c.Event.Info.ID),
 				Participant:   proto.String(c.Event.Info.Sender.ToNonAD().String()),
 				QuotedMessage: c.Event.Message,
