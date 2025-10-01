@@ -1,33 +1,25 @@
 # 1. Base image Go untuk build
-FROM golang:1.25.1-alpine AS builder
+FROM golang:1.25.1-bullseye AS builder
 
-# Install dependency build essentials
-RUN apk add --no-cache gcc g++ libc-dev libwebp-dev
+RUN apt-get update && apt-get install -y \
+    build-essential libwebp-dev ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
-
-# Copy go mod files dan download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy codebase
 COPY . .
-
-# Build static binary
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o turubot cmd/bot/main.go
 
-# 2. Minimal runtime image
-FROM alpine:latest
+# 2. Runtime
+FROM debian:bullseye-slim
 
-# Install ffmpeg & libwebp
-RUN apk add --no-cache ffmpeg libwebp
+RUN apt-get update && apt-get install -y \
+    ffmpeg libwebp7 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy binary from builder
 COPY --from=builder /app/turubot /usr/local/bin/turubot
 
-# Set working directory
 WORKDIR /app
-
-# program entrypoint
 ENTRYPOINT ["turubot"]

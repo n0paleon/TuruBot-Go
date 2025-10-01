@@ -22,7 +22,7 @@ func (cmd *Command) generateMeme(
 	defer logger.Close()
 
 	_ = ctx.Pool.Submit(func() {
-		_ = ctx.Reply(fmt.Sprintf("Pemrosesan dimulai, log bisa dilihat melalui link berikut:\n\n%s", logger.GetStreamUrl()))
+		_ = ctx.Reply(fmt.Sprintf("Proses dimulai, log bisa dilihat melalui link berikut:\n\n%s", logger.GetStreamUrl()))
 	})
 	logger.PushLog("Parsing input args")
 	inputArgs := stringparser.ParseArgs(ctx.GetMessageString())
