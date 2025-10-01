@@ -10,9 +10,6 @@ import (
 func (cmd *Command) GenerateStickerByImage(ctx *types.BotContext) error {
 	imageData := ctx.GetImageMessage()
 
-	// debug
-	ctx.SetQueueMode(types.QueueBlocking)
-
 	if imageData == nil {
 		return ctx.Reply("kirim/reply gambar dengan caption: /stiker")
 	}

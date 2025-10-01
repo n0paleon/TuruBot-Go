@@ -14,6 +14,7 @@ func (cmd *Command) PingHandler(ctx *types.BotContext) error {
 		return err
 	}
 
+	ctx.SetQueueMode(types.QueueNonBlocking)
 	latency := time.Since(start).Milliseconds()
 
 	return ctx.Reply(fmt.Sprintf("⏱ Bot latency: %dms", latency))
