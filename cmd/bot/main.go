@@ -84,7 +84,7 @@ func main() {
 	}
 
 	routeSet := botRoutes()
-	wa, err := whatsapp.NewClient(pool, routeSet, 20, cfg)
+	wa, err := whatsapp.NewClient(pool, routeSet, 30, cfg)
 	if err != nil {
 		logrus.Fatal(err)
 	}

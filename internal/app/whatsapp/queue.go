@@ -43,7 +43,7 @@ func (wa *WAClient) EnqueueMessage(ctx context.Context, chatJID types.JID, msg *
 // EnqueueMessageNonBlocking (non-blocking version oof EnqueueMessage)
 func (wa *WAClient) EnqueueMessageNonBlocking(_ context.Context, chatJID types.JID, msg *waE2E.Message) error {
 	return wa.WorkerPool.Submit(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
 		if err := wa.limiter.Wait(ctx); err != nil {
