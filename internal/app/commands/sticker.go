@@ -3,11 +3,15 @@ package commands
 import (
 	"TuruBot-Go/internal/app/types"
 	"TuruBot-Go/internal/app/utils"
+
 	"github.com/sirupsen/logrus"
 )
 
 func (cmd *Command) GenerateStickerByImage(ctx *types.BotContext) error {
 	imageData := ctx.GetImageMessage()
+
+	// debug
+	ctx.SetQueueMode(types.QueueBlocking)
 
 	if imageData == nil {
 		return ctx.Reply("kirim/reply gambar dengan caption: /stiker")
