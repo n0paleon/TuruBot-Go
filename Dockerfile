@@ -1,5 +1,5 @@
 # 1. Base image Go untuk build
-FROM golang:1.25.1-bullseye AS builder
+FROM golang:1.25.1-bookworm AS builder
 
 RUN apt-get update && apt-get install -y \
     build-essential libwebp-dev ffmpeg \
@@ -13,7 +13,7 @@ COPY . .
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o turubot cmd/bot/main.go
 
 # 2. Runtime
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
     ffmpeg libwebp7 \
